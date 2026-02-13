@@ -1,126 +1,153 @@
-// HK BAU - Industrial Elegance Redesign - JavaScript
+// ===========================================
+// HK BAU REDESIGN - JAVASCRIPT
+// World-Class Interactions & Animations
+// ===========================================
 
-// ===== NAV SCROLL EFFECT =====
-const nav = document.getElementById('mainNav');
-let lastScroll = 0;
+(function() {
+    'use strict';
 
-window.addEventListener('scroll', () => {
-    const currentScroll = window.pageYOffset;
+    // ========== NAV SCROLL EFFECT ==========
+    const nav = document.getElementById('mainNav');
+    const navLinks = document.querySelectorAll('.nav-link');
     
-    if (currentScroll > 100) {
-        nav.classList.add('scrolled');
-    } else {
-        nav.classList.remove('scrolled');
+    function handleNavScroll() {
+        if (window.scrollY > 100) {
+            nav.classList.add('scrolled');
+        } else {
+            nav.classList.remove('scrolled');
+        }
     }
-    
-    lastScroll = currentScroll;
-});
 
-// ===== MOBILE MENU =====
-const mobileToggle = document.querySelector('.mobile-menu-toggle');
-const navLinks = document.querySelector('.nav-links');
-
-if (mobileToggle) {
-    mobileToggle.addEventListener('click', () => {
-        navLinks.classList.toggle('active');
-        mobileToggle.classList.toggle('active');
-    });
-}
-
-// ===== ANIMATED COUNTERS =====
-const counters = document.querySelectorAll('.stat-number');
-let counted = false;
-
-const animateCounters = () => {
-    if (counted) return;
-    
-    const triggerBottom = window.innerHeight * 0.8;
-    
-    counters.forEach(counter => {
-        const rect = counter.getBoundingClientRect();
-        
-        if (rect.top < triggerBottom) {
-            counted = true;
-            const target = +counter.getAttribute('data-target');
-            const increment = target / 100;
-            let current = 0;
-            
-            const updateCounter = () => {
-                current += increment;
-                if (current < target) {
-                    counter.textContent = Math.ceil(current);
-                    requestAnimationFrame(updateCounter);
-                } else {
-                    counter.textContent = target;
+    // ========== SMOOTH SCROLL ==========
+    navLinks.forEach(link => {
+        link.addEventListener('click', function(e) {
+            const href = this.getAttribute('href');
+            if (href.startsWith('#')) {
+                e.preventDefault();
+                const target = document.querySelector(href);
+                if (target) {
+                    target.scrollIntoView({ behavior: 'smooth' });
                 }
-            };
-            
-            updateCounter();
-        }
+            }
+        });
     });
-};
 
-window.addEventListener('scroll', animateCounters);
+    // ========== ACTIVE NAV LINK ON SCROLL ==========
+    function updateActiveNav() {
+        const sections = document.querySelectorAll('section[id]');
+        let current = '';
 
-// ===== SMOOTH SCROLL =====
-document.querySelectorAll('a[href^="#"]').forEach(anchor => {
-    anchor.addEventListener('click', function (e) {
-        e.preventDefault();
-        const target = document.querySelector(this.getAttribute('href'));
-        if (target) {
-            target.scrollIntoView({
-                behavior: 'smooth',
-                block: 'start'
-            });
-        }
+        sections.forEach(section => {
+            const sectionTop = section.offsetTop;
+            const sectionHeight = section.clientHeight;
+            if (window.scrollY >= sectionTop - 200) {
+                current = section.getAttribute('id');
+            }
+        });
+
+        navLinks.forEach(link => {
+            link.classList.remove('active');
+            if (link.getAttribute('href') === `#${current}`) {
+                link.classList.add('active');
+            }
+        });
+    }
+
+    // ========== STATS COUNTER ANIMATION ==========
+    function animateCounter(element) {
+        const target = parseInt(element.getAttribute('data-target'));
+        const duration = 2000;
+        const increment = target / (duration / 16);
+        let current = 0;
+
+        const timer = setInterval(() => {
+            current += increment;
+            if (current >= target) {
+                element.textContent = target;
+                clearInterval(timer);
+            } else {
+                element.textContent = Math.floor(current);
+            }
+        }, 16);
+    }
+
+    // ========== INTERSECTION OBSERVER FOR ANIMATIONS ==========
+    const observerOptions = {
+        threshold: 0.2,
+        rootMargin: '0px 0px -100px 0px'
+    };
+
+    const observer = new IntersectionObserver((entries) => {
+        entries.forEach(entry => {
+            if (entry.isIntersecting) {
+                // Animate stats
+                if (entry.target.classList.contains('stat-number')) {
+                    animateCounter(entry.target);
+                    observer.unobserve(entry.target);
+                }
+                
+                // Fade in elements
+                entry.target.style.opacity = '1';
+                entry.target.style.transform = 'translateY(0)';
+            }
+        });
+    }, observerOptions);
+
+    // Observe stat numbers
+    document.querySelectorAll('.stat-number').forEach(stat => {
+        observer.observe(stat);
     });
-});
 
-// ===== SCROLL REVEAL ANIMATION =====
-const observerOptions = {
-    threshold: 0.1,
-    rootMargin: '0px 0px -100px 0px'
-};
-
-const observer = new IntersectionObserver((entries) => {
-    entries.forEach(entry => {
-        if (entry.isIntersecting) {
-            entry.target.style.opacity = '1';
-            entry.target.style.transform = 'translateY(0)';
-        }
+    // Observe fade-in elements
+    document.querySelectorAll('.service-card, .project-card, .feature-item').forEach(el => {
+        el.style.opacity = '0';
+        el.style.transform = 'translateY(30px)';
+        el.style.transition = 'opacity 0.6s ease, transform 0.6s ease';
+        observer.observe(el);
     });
-}, observerOptions);
 
-// Add animation to elements
-document.querySelectorAll('.service-card, .project-item, .feature-item').forEach(el => {
-    el.style.opacity = '0';
-    el.style.transform = 'translateY(30px)';
-    el.style.transition = 'all 0.6s cubic-bezier(0.4, 0, 0.2, 1)';
-    observer.observe(el);
-});
+    // ========== MOBILE MENU ==========
+    const mobileMenuBtn = document.getElementById('mobileMenuBtn');
+    const mobileNavLinks = document.getElementById('navLinks');
 
-// ===== PARALLAX EFFECT =====
-window.addEventListener('scroll', () => {
-    const scrolled = window.pageYOffset;
-    const parallaxElements = document.querySelectorAll('[data-parallax]');
+    if (mobileMenuBtn) {
+        mobileMenuBtn.addEventListener('click', () => {
+            mobileNavLinks.classList.toggle('active');
+            mobileMenuBtn.classList.toggle('active');
+        });
+    }
+
+    // ========== EVENT LISTENERS ==========
+    window.addEventListener('scroll', () => {
+        handleNavScroll();
+        updateActiveNav();
+    });
+
+    // Initial calls
+    handleNavScroll();
+    updateActiveNav();
+
+    // ========== PARALLAX EFFECT ==========
+    const heroBg = document.querySelector('.hero-bg-image');
     
-    parallaxElements.forEach(el => {
-        const speed = el.getAttribute('data-parallax') || 0.5;
-        el.style.transform = `translateY(${scrolled * speed}px)`;
+    window.addEventListener('scroll', () => {
+        const scrolled = window.scrollY;
+        if (heroBg && scrolled < window.innerHeight) {
+            heroBg.style.transform = `translateY(${scrolled * 0.4}px)`;
+        }
     });
-});
 
-// ===== INIT =====
-document.addEventListener('DOMContentLoaded', () => {
-    // Add loading animation
-    document.body.style.opacity = '0';
-    setTimeout(() => {
-        document.body.style.transition = 'opacity 0.5s ease';
-        document.body.style.opacity = '1';
-    }, 100);
-    
-    // Check if counters are in view on load
-    animateCounters();
-});
+    // ========== CURSOR EFFECT (OPTIONAL) ==========
+    // Uncomment for custom cursor
+    /*
+    const cursor = document.createElement('div');
+    cursor.classList.add('custom-cursor');
+    document.body.appendChild(cursor);
 
-console.log('🏗️ HK BAU - Industrial Elegance Redesign Loaded');
+    document.addEventListener('mousemove', (e) => {
+        cursor.style.left = e.clientX + 'px';
+        cursor.style.top = e.clientY + 'px';
+    });
+    */
+
+})();
